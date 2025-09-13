@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLM Business Insights</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .api-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .api-section h2 {
+            color: #34495e;
+            margin-top: 0;
+        }
+        .endpoint {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .get { background-color: #27ae60; color: white; }
+        .post { background-color: #e74c3c; color: white; }
+        .endpoint-url {
+            font-family: monospace;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .description {
+            margin-top: 10px;
+            color: #7f8c8d;
+        }
+        .example {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .status.healthy {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        .status.error {
+            background-color: #fadbd8;
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+        .test-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .test-button:hover {
+            background-color: #2980b9;
+        }
+        .response {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 SLM Business Insights API</h1>
+        
+        <div id="status" class="status">
+            <p>Checking API status...</p>
+        </div>
+        
+        <div class="api-section">
+            <h2>📊 Business Insights</h2>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/insights/customer-segmentation</span>
+                <div class="description">
+                    Perform customer segmentation using KMeans clustering
+                </div>
+                <button class="test-button" onclick="testCustomerSegmentation()">Test</button>
+                <div id="customer-segmentation-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/insights/sentiment-analysis</span>
+                <div class="description">
+                    Analyze sentiment of text data
+                </div>
+                <button class="test-button" onclick="testSentimentAnalysis()">Test</button>
+                <div id="sentiment-analysis-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/insights/sales-forecasting</span>
+                <div class="description">
+                    Forecast future sales using time series analysis
+                </div>
+                <button class="test-button" onclick="testSalesForecasting()">Test</button>
+                <div id="sales-forecasting-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/insights/price-optimization</span>
+                <div class="description">
+                    Optimize pricing strategy for maximum revenue
+                </div>
+                <button class="test-button" onclick="testPriceOptimization()">Test</button>
+                <div id="price-optimization-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/insights/churn-prediction</span>
+                <div class="description">
+                    Predict customer churn probability
+                </div>
+                <button class="test-button" onclick="testChurnPrediction()">Test</button>
+                <div id="churn-prediction-response" class="response" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h2>💡 Recommendations</h2>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/recommendations/marketing</span>
+                <div class="description">
+                    Generate marketing recommendations based on customer segments
+                </div>
+                <button class="test-button" onclick="testMarketingRecommendations()">Test</button>
+                <div id="marketing-recommendations-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/recommendations/comprehensive</span>
+                <div class="description">
+                    Generate comprehensive business recommendations
+                </div>
+                <button class="test-button" onclick="testComprehensiveRecommendations()">Test</button>
+                <div id="comprehensive-recommendations-response" class="response" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div class="api-section">
+            <h2>🔧 Utilities</h2>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/data/sample</span>
+                <div class="description">
+                    Generate sample data for testing
+                </div>
+                <button class="test-button" onclick="testSampleData()">Test</button>
+                <div id="sample-data-response" class="response" style="display: none;"></div>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/health</span>
+                <div class="description">
+                    Check API health status
+                </div>
+                <button class="test-button" onclick="checkHealth()">Test</button>
+                <div id="health-response" class="response" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check API health on page load
+        window.onload = function() {
+            checkHealth();
+        };
+
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('status');
+                if (data.status === 'healthy') {
+                    statusDiv.className = 'status healthy';
+                    statusDiv.innerHTML = `<p>✅ API is healthy - Version ${data.version}</p>`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '<p>❌ API is not healthy</p>';
+                }
+            } catch (error) {
+                const statusDiv = document.getElementById('status');
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '<p>❌ Cannot connect to API</p>';
+            }
+        }
+
+        async function testCustomerSegmentation() {
+            const sampleData = await getSampleData();
+            const requestData = {
+                customers: sampleData.customers.slice(0, 50),
+                n_clusters: 3
+            };
+            
+            try {
+                const response = await fetch('/api/insights/customer-segmentation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('customer-segmentation-response', data);
+            } catch (error) {
+                showResponse('customer-segmentation-response', { error: error.message });
+            }
+        }
+
+        async function testSentimentAnalysis() {
+            const requestData = {
+                texts: [
+                    "Great product, very satisfied with the quality!",
+                    "Poor customer service, took too long to respond",
+                    "Excellent value for money, would recommend",
+                    "Product arrived damaged, need better packaging"
+                ]
+            };
+            
+            try {
+                const response = await fetch('/api/insights/sentiment-analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('sentiment-analysis-response', data);
+            } catch (error) {
+                showResponse('sentiment-analysis-response', { error: error.message });
+            }
+        }
+
+        async function testSalesForecasting() {
+            // Generate sample sales data
+            const salesData = [];
+            const startDate = new Date('2023-01-01');
+            
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(startDate);
+                date.setMonth(date.getMonth() + i);
+                salesData.push({
+                    date: date.toISOString().split('T')[0],
+                    sales: 10000 + Math.random() * 5000
+                });
+            }
+            
+            const requestData = {
+                sales_data: salesData,
+                periods: 6
+            };
+            
+            try {
+                const response = await fetch('/api/insights/sales-forecasting', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('sales-forecasting-response', data);
+            } catch (error) {
+                showResponse('sales-forecasting-response', { error: error.message });
+            }
+        }
+
+        async function testPriceOptimization() {
+            const requestData = {
+                price_data: [
+                    { product_id: 'PROD_001', price: 100, quantity: 50 },
+                    { product_id: 'PROD_001', price: 110, quantity: 45 },
+                    { product_id: 'PROD_002', price: 200, quantity: 30 },
+                    { product_id: 'PROD_002', price: 190, quantity: 35 }
+                ]
+            };
+            
+            try {
+                const response = await fetch('/api/insights/price-optimization', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('price-optimization-response', data);
+            } catch (error) {
+                showResponse('price-optimization-response', { error: error.message });
+            }
+        }
+
+        async function testChurnPrediction() {
+            const sampleData = await getSampleData();
+            const requestData = {
+                customer_data: sampleData.customers.slice(0, 20)
+            };
+            
+            try {
+                const response = await fetch('/api/insights/churn-prediction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('churn-prediction-response', data);
+            } catch (error) {
+                showResponse('churn-prediction-response', { error: error.message });
+            }
+        }
+
+        async function testMarketingRecommendations() {
+            const sampleData = await getSampleData();
+            const requestData = {
+                customer_data: sampleData.customers.slice(0, 50),
+                n_clusters: 3
+            };
+            
+            try {
+                const response = await fetch('/api/recommendations/marketing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('marketing-recommendations-response', data);
+            } catch (error) {
+                showResponse('marketing-recommendations-response', { error: error.message });
+            }
+        }
+
+        async function testComprehensiveRecommendations() {
+            const sampleData = await getSampleData();
+            const requestData = {
+                customer_data: sampleData.customers.slice(0, 30),
+                sales_data: sampleData.sales.slice(0, 50)
+            };
+            
+            try {
+                const response = await fetch('/api/recommendations/comprehensive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                showResponse('comprehensive-recommendations-response', data);
+            } catch (error) {
+                showResponse('comprehensive-recommendations-response', { error: error.message });
+            }
+        }
+
+        async function testSampleData() {
+            try {
+                const response = await fetch('/api/data/sample');
+                const data = await response.json();
+                showResponse('sample-data-response', data);
+            } catch (error) {
+                showResponse('sample-data-response', { error: error.message });
+            }
+        }
+
+        async function getSampleData() {
+            try {
+                const response = await fetch('/api/data/sample');
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching sample data:', error);
+                return { customers: [], sales: [], feedback: [] };
+            }
+        }
+
+        function showResponse(elementId, data) {
+            const responseDiv = document.getElementById(elementId);
+            responseDiv.style.display = 'block';
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
