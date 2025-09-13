@@ -1,0 +1,35 @@
+# Core dependencies for SLM Business Insights System
+# Minimal requirements for basic functionality
+
+# Data processing
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Machine learning
+scikit-learn>=1.1.0
+
+# Web framework
+Flask>=2.0.0
+
+# Dashboard
+streamlit>=1.20.0
+
+# HTTP requests
+requests>=2.28.0
+
+# Date/time handling
+python-dateutil>=2.8.0
+
+# JSON handling
+jsonschema>=4.0.0
+
+# Logging
+colorlog>=6.0.0
+
+# Optional: Advanced ML (install separately if needed)
+# torch>=1.12.0
+# transformers>=4.20.0
+# statsmodels>=0.13.0
+# plotly>=5.0.0
+# seaborn>=0.11.0
+# matplotlib>=3.5.0
