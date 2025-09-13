@@ -1,0 +1,728 @@
+Final Answer: Local Email Analysis Application
+Here is the complete code for a local application that connects to Gmail, fetches customer
+emails, and analyzes them to provide insights similar to those offered by a world-class team of
+consultants. The application is designed to be easy to train and deploy locally.
+Step 1: Set Up the Project Structure
+Create a project directory with the following structure:
+email_insights/ │ ├── app.py # Main application code
+├── requirements.txt # Python dependencies
+├── credentials.json # Google OAuth credentials
+(download from Google Cloud Console) ├── token.pickle # OAuth token (generated after
+first run)
+├── templates/
+│ └── index.html # Web interface template
+└── saved_model/ # Directory to save trained
+models (created automatically)
+Step 2: Install Dependencies
+Create a requirements.txt file with the following content:
+google-api-python-client==2.56.0
+google-auth-oauthlib==0.4.6
+pandas==1.3.5
+numpy==1.21.4
+transformers==4.12.5
+torch==1.9.1
+flask==2.0.2
+scikit-learn==0.24.2
+nltk==3.6.7
+beautifulsoup4==4.10.0
+Install the dependencies by running:
+pip install -r requirements.txt
+Step 3: Create the Application Code
+Create a file named app.py with the following code:
+from flask import Flask, render_template, request, jsonify
+import os
+import pickle
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
+from transformers import pipeline, DistilBertTokenizer,
+DistilBertForSequenceClassification, Trainer,
+TrainingArguments
+import torch
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+import string
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import LabelEncoder
+from bs4 import BeautifulSoup
+import base64
+import re
+# Initialize Flask app
+app = Flask(__name__)
+# Define the scopes for Gmail API
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+# Download necessary NLTK data
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+# Load pre-trained models
+tokenizer =
+DistilBertTokenizer.from_pretrained('distilbert-base-
+uncased')
+model =
+DistilBertForSequenceClassification.from_pretrained('distil
+bert-base-uncased', num_labels=3)
+sentiment_analyzer = pipeline("sentiment-analysis",
+model="distilbert-base-uncased-finetuned-sst-2-english")
+classifier = pipeline("zero-shot-classification",
+model="facebook/bart-large-mnli")
+def get_gmail_service():
+creds = None
+if os.path.exists('token.pickle'):
+with open('token.pickle', 'rb') as token:
+creds = pickle.load(token)
+if not creds or not creds.valid:
+if creds and creds.expired and creds.refresh_token:
+creds.refresh(Request())
+else:
+flow =
+InstalledAppFlow.from_client_secrets_file(
+'credentials.json', SCOPES)
+creds = flow.run_local_server(port=0)
+with open('token.pickle', 'wb') as token:
+pickle.dump(creds, token)
+service = build('gmail', 'v1', credentials=creds)
+return service
+def fetch_emails(service, user_id='me',
+label_ids=['INBOX'], max_results=10):
+try:
+results = service.users().messages().list(
+userId=user_id, labelIds=label_ids,
+maxResults=max_results).execute()
+messages = results.get('messages', [])
+emails = []
+if not messages:
+print('No messages found.')
+else:
+for message in messages:
+msg =
+service.users().messages().get(userId=user_id,
+id=message['id']).execute()
+emails.append(msg)
+return emails
+except Exception as error:
+print(f'An error occurred: {error}')
+return []
+def parse_email(email):
+headers = email['payload']['headers']
+subject = next((header['value'] for header in headers
+if header['name'] == 'Subject'), '')
+sender = next((header['value'] for header in headers if
+header['name'] == 'From'), '')
+date = next((header['value'] for header in headers if
+header['name'] == 'Date'), '')
+body = ''
+if 'parts' in email['payload']:
+for part in email['payload']['parts']:
+if part['mimeType'] == 'text/plain':
+body_data = part['body']['data']
+body = body_data
+break
+else:
+body_data = email['payload']['body']['data']
+body = body_data
+try:
+decoded_body =
+base64.urlsafe_b64decode(body).decode('utf-8')
+except:
+decoded_body = ''
+soup = BeautifulSoup(decoded_body, 'html.parser')
+clean_body = soup.get_text()
+clean_body = re.sub(r'\s+', ' ', clean_body).strip()
+return {
+'subject': subject,
+'sender': sender,
+'date': date,
+'body': clean_body
+}
+def preprocess_text(text):
+text = text.lower()
+text = text.translate(str.maketrans(''
+,
+''
+,
+string.punctuation))
+tokens = word_tokenize(text)
+stop_words = set(stopwords.words('english'))
+tokens = [word for word in tokens if word not in
+stop_words]
+lemmatizer = WordNetLemmatizer()
+tokens = [lemmatizer.lemmatize(word) for word in
+tokens]
+preprocessed_text = ' '.join(tokens)
+return preprocessed_text
+def preprocess_emails(emails):
+parsed_emails = [parse_email(email) for email in
+emails]
+df = pd.DataFrame(parsed_emails)
+df['cleaned_body'] = df['body'].apply(preprocess_text)
+return df
+def analyze_sentiment(text):
+if not text.strip():
+return 'neutral', 0.0
+try:
+result = sentiment_analyzer(text)[0]
+return result['label'], result['score']
+except Exception as e:
+print(f"Error in sentiment analysis: {e}")
+return 'neutral', 0.0
+def classify_email(text, candidate_labels=["complaint",
+"inquiry", "feedback"]):
+if not text.strip():
+return 'unknown', 0.0
+try:
+result = classifier(text, candidate_labels)
+return result['labels'][0], result['scores'][0]
+except Exception as e:
+print(f"Error in email classification: {e}")
+return 'unknown', 0.0
+def extract_topics(texts, n_clusters=5):
+if not texts or len(texts) == 0:
+return []
+vectorizer = TfidfVectorizer(max_df=0.95, min_df=2,
+stop_words='english')
+try:
+tfidf = vectorizer.fit_transform(texts)
+if tfidf.shape[0] > 0:
+kmeans = KMeans(n_clusters=min(n_clusters,
+tfidf.shape[0]), random_state=42)
+clusters = kmeans.fit_predict(tfidf)
+return clusters
+else:
+return []
+except Exception as e:
+print(f"Error in topic extraction: {e}")
+return []
+def generate_insights(df):
+if df.empty:
+return {}, df
+try:
+df[['sentiment', 'sentiment_score']] =
+df['cleaned_body'].apply(
+lambda x: pd.Series(analyze_sentiment(x))
+)
+df[['email_type', 'type_score']] =
+df['cleaned_body'].apply(
+lambda x: pd.Series(classify_email(x))
+)
+df['topic_cluster'] =
+extract_topics(df['cleaned_body'].tolist())
+except Exception as e:
+print(f"Error in generating insights: {e}")
+insights = {
+'sentiment_distribution':
+dict(df['sentiment'].value_counts()) if not df.empty else
+{},
+'email_type_distribution':
+dict(df['email_type'].value_counts()) if not df.empty else
+{},
+'topic_distribution':
+dict(df['topic_cluster'].value_counts()) if not df.empty
+else {},
+'top_complaints': df[df['email_type'] ==
+'complaint']['cleaned_body'].tolist() if not df.empty else
+[],
+'top_inquiries': df[df['email_type'] == 'inquiry']
+['cleaned_body'].tolist() if not df.empty else [],
+'top_feedback': df[df['email_type'] == 'feedback']
+['cleaned_body'].tolist() if not df.empty else [],
+}
+return insights, df
+@app.route('/')
+def index():
+return render_template('index.html')
+@app.route('/fetch_and_analyze', methods=['POST'])
+def fetch_and_analyze():
+try:
+service = get_gmail_service()
+emails = fetch_emails(service)
+if not emails:
+return jsonify({
+'success': False,
+'error': 'No emails found or error fetching
+emails.'
+})
+df = preprocess_emails(emails)
+if df.empty:
+return jsonify({
+'success': False,
+'error': 'No valid emails to process.'
+})
+insights, enriched_df = generate_insights(df)
+return jsonify({
+'success': True,
+'insights': insights,
+'data': enriched_df.to_dict('records')
+})
+except Exception as e:
+return jsonify({
+'success': False,
+'error': str(e)
+})
+def train_model_route():
+try:
+service = get_gmail_service()
+emails = fetch_emails(service)
+if not emails:
+return jsonify({
+'success': False,
+'error': 'No emails found or error fetching
+emails.'
+})
+df = preprocess_emails(emails)
+if df.empty:
+return jsonify({
+'success': False,
+'error': 'No valid emails to process.'
+})
+# For training, we need labeled data. Here, we'll
+create dummy labels for demonstration.
+# In a real scenario, you would have labeled
+emails.
+df['label'] = ['complaint', 'inquiry', 'feedback']
+* (len(df) // 3 + 1)
+df['label'] = df['label'][:len(df)]
+# Encode labels
+label_encoder = LabelEncoder()
+df['label_encoded'] =
+label_encoder.fit_transform(df['label'])
+# Tokenize data
+texts = df['cleaned_body'].tolist()
+labels = df['label_encoded'].tolist()
+inputs = tokenizer(texts, padding=True,
+truncation=True, max_length=512, return_tensors="pt")
+class EmailDataset(torch.utils.data.Dataset):
+def __init__(self, encodings, labels):
+self.encodings = encodings
+self.labels = labels
+def __getitem__(self, idx):
+item = {key: val[idx] for key, val in
+self.encodings.items()}
+item['labels'] =
+torch.tensor(self.labels[idx])
+return item
+def __len__(self):
+return len(self.labels)
+dataset = EmailDataset(inputs, labels)
+if len(dataset) == 0:
+return jsonify({
+'success': False,
+'error': 'No valid data for training.'
+})
+train_size = int(0.8 * len(dataset))
+test_size = len(dataset) - train_size
+train_dataset, test_dataset =
+torch.utils.data.random_split(dataset, [train_size,
+test_size])
+training_args = TrainingArguments(
+output_dir='./results',
+num_train_epochs=3,
+per_device_train_batch_size=8,
+per_device_eval_batch_size=8,
+warmup_steps=500,
+weight_decay=0.01,
+logging_dir='./logs',
+)
+trainer = Trainer(
+model=model,
+args=training_args,
+train_dataset=train_dataset,
+eval_dataset=test_dataset
+)
+trainer.train()
+# Save the trained model and tokenizer
+model.save_pretrained('./saved_model')
+tokenizer.save_pretrained('./saved_model')
+return jsonify({
+'success': True,
+'message': 'Model trained and saved
+successfully.'
+})
+except Exception as e:
+return jsonify({
+'success': False,
+'error': str(e)
+})
+@app.route('/train_model', methods=['POST'])
+def train_model_endpoint():
+return train_model_route()
+if __name__ == '__main__':
+app.run(debug=True)
+Step 4: Create the HTML Template
+Create a folder named templates in your project directory and add the following
+index.html file:
+<!DOCTYPE html>
+<html>
+<head>
+<title>Email Insights Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></
+script>
+<style>
+body {
+font-family: Arial, sans-serif;
+margin: 20px;
+}
+.container {
+display: flex;
+flex-direction: column;
+gap: 20px;
+}
+.chart-container {
+width: 80%;
+margin: 0 auto;
+}
+button {
+padding: 10px 15px;
+background-color: #4CAF50;
+color: white;
+border: none;
+border-radius: 4px;
+cursor: pointer;
+margin: 10px 0;
+}
+button:hover {
+background-color: #45a049;
+}
+table {
+width: 80%;
+border-collapse: collapse;
+margin: 0 auto;
+}
+th, td {
+border: 1px solid #ddd;
+padding: 8px;
+text-align: left;
+}
+th {
+background-color: #f2f2f2;
+}
+.loading {
+text-align: center;
+margin: 20px 0;
+}
+.error {
+color: red;
+margin: 10px 0;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Email Insights Dashboard</h1>
+<button onclick="fetchAndAnalyze()">Fetch and
+Analyze Emails</button>
+<button onclick="trainModel()">Train Model</button>
+<div id="loading" class="loading" style="display:
+none;">Loading...</div>
+<div id="error" class="error" style="display:
+none;"></div>
+<div class="chart-container">
+<canvas id="sentimentChart" width="400"
+height="200"></canvas>
+</div>
+<div class="chart-container">
+<canvas id="emailTypeChart" width="400"
+height="200"></canvas>
+</div>
+<div class="chart-container">
+<canvas id="topicChart" width="400"
+height="200"></canvas>
+</div>
+<div>
+<h2>Email Data</h2>
+<table id="emailTable">
+<thead>
+<tr>
+<th>Subject</th>
+<th>Sender</th>
+<th>Date</th>
+<th>Sentiment</th>
+<th>Type</th>
+<th>Topic Cluster</th>
+</tr>
+</thead>
+<tbody>
+<!-- Data will be inserted here by
+JavaScript -->
+</tbody>
+</table>
+</div>
+</div>
+<script>
+async function fetchAndAnalyze() {
+const loadingDiv =
+document.getElementById('loading');
+const errorDiv =
+document.getElementById('error');
+loadingDiv.style.display = 'block';
+errorDiv.style.display = 'none';
+try {
+const response = await fetch('/
+fetch_and_analyze', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+},
+});
+const data = await response.json();
+if (data.success) {
+updateCharts(data.insights);
+updateTable(data.data);
+} else {
+errorDiv.textContent = 'Error: ' +
+data.error;
+errorDiv.style.display = 'block';
+}
+} catch (error) {
+errorDiv.textContent = 'Error: ' +
+error.message;
+errorDiv.style.display = 'block';
+} finally {
+loadingDiv.style.display = 'none';
+}
+}
+async function trainModel() {
+const loadingDiv =
+document.getElementById('loading');
+const errorDiv =
+document.getElementById('error');
+loadingDiv.style.display = 'block';
+errorDiv.style.display = 'none';
+try {
+const response = await fetch('/
+train_model', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+},
+});
+const data = await response.json();
+if (data.success) {
+alert(data.message);
+} else {
+errorDiv.textContent = 'Error: ' +
+data.error;
+errorDiv.style.display = 'block';
+}
+} catch (error) {
+errorDiv.textContent = 'Error: ' +
+error.message;
+errorDiv.style.display = 'block';
+} finally {
+loadingDiv.style.display = 'none';
+}
+}
+function updateCharts(insights) {
+// Clear previous charts if they exist
+if (window.sentimentChart) {
+window.sentimentChart.destroy();
+}
+if (window.emailTypeChart) {
+window.emailTypeChart.destroy();
+}
+if (window.topicChart) {
+window.topicChart.destroy();
+}
+// Sentiment Chart
+const sentimentCtx =
+document.getElementById('sentimentChart').getContext('2d');
+if (insights.sentiment_distribution &&
+Object.keys(insights.sentiment_distribution).length > 0) {
+window.sentimentChart = new
+Chart(sentimentCtx, {
+type: 'pie',
+data: {
+labels:
+Object.keys(insights.sentiment_distribution),
+datasets: [{
+label: 'Sentiment
+Distribution',
+data:
+Object.values(insights.sentiment_distribution),
+backgroundColor: [
+'rgba(255, 99, 132, 0.7)',
+'rgba(54, 162, 235, 0.7)',
+],
+}]
+},
+options: {
+responsive: true,
+plugins: {
+legend: {
+position: 'top',
+},
+title: {
+display: true,
+text: 'Sentiment
+Distribution'
+}
+}
+}
+});
+}
+// Email Type Chart
+const emailTypeCtx =
+document.getElementById('emailTypeChart').getContext('2d');
+if (insights.email_type_distribution &&
+Object.keys(insights.email_type_distribution).length > 0) {
+window.emailTypeChart = new
+Chart(emailTypeCtx, {
+type: 'bar',
+data: {
+labels:
+Object.keys(insights.email_type_distribution),
+datasets: [{
+label: 'Email Type
+Distribution',
+data:
+Object.values(insights.email_type_distribution),
+backgroundColor: [
+'rgba(255, 99, 132, 0.7)',
+'rgba(54, 162, 235, 0.7)',
+'rgba(255, 206, 86, 0.7)',
+],
+}]
+},
+options: {
+responsive: true,
+plugins: {
+legend: {
+position: 'top',
+},
+title: {
+display: true,
+text: 'Email Type
+Distribution'
+}
+}
+}
+});
+}
+// Topic Distribution Chart
+const topicCtx =
+document.getElementById('topicChart').getContext('2d');
+if (insights.topic_distribution &&
+Object.keys(insights.topic_distribution).length > 0) {
+const topics =
+Object.keys(insights.topic_distribution).map(k => `Cluster
+${k}`);
+const counts =
+Object.values(insights.topic_distribution);
+window.topicChart = new Chart(topicCtx, {
+type: 'doughnut',
+data: {
+labels: topics,
+datasets: [{
+label: 'Topic Distribution',
+data: counts,
+backgroundColor: [
+'rgba(255, 99, 132, 0.7)',
+'rgba(54, 162, 235, 0.7)',
+'rgba(255, 206, 86, 0.7)',
+'rgba(75, 192, 192, 0.7)',
+'rgba(153, 102, 255, 0.7)',
+],
+}]
+},
+options: {
+responsive: true,
+plugins: {
+legend: {
+position: 'top',
+},
+title: {
+display: true,
+text: 'Topic Distribution'
+}
+}
+}
+});
+}
+}
+function updateTable(data) {
+const tbody =
+document.querySelector('#emailTable tbody');
+tbody.innerHTML = '';
+if (data && data.length > 0) {
+data.forEach(row => {
+const tr =
+document.createElement('tr');
+tr.innerHTML = `
+<td>${row.subject}</td>
+<td>${row.sender}</td>
+<td>${row.date}</td>
+<td>${row.sentiment || 'neutral'}</
+td>
+<td>${row.email_type || 'unknown'}
+</td>
+<td>${row.topic_cluster !==
+undefined ? row.topic_cluster : 'N/A'}</td>
+`;
+tbody.appendChild(tr);
+});
+}
+}
+</script>
+</body>
+</html>
+Step 5: Set Up Google OAuth Credentials
+1. Go to the Google Cloud Console.
+2. Create a new project.
+3. 4. 5. 6. Navigate to "APIs & Services" > "Library" and enable the "Gmail API".
+Go to "APIs & Services" > "Credentials" and click "Create Credentials" > "OAuth client
+ID".
+Choose "Desktop app" as the application type and give it a name.
+Click "Create" and download the credentials file. Rename it to credentials.json
+and place it in your project directory.
+Step 6: Run the Application
+Run the Flask application by executing the following command in your terminal:
+python app.py
+Open your web browser and navigate to http://localhost:5000. You should see the
+dashboard interface with buttons to fetch and analyze emails and train the model.
+Key Features
+1. Gmail Integration:
+◦ Authenticates with Google OAuth 2.0.
+◦ Fetches emails from the user's inbox.
+◦ Parses email content (subject, sender, date, body).
+2. Text Preprocessing:
+◦ Cleans and preprocesses email text (lowercasing, removing punctuation,
+tokenizing, removing stopwords, lemmatization).
+3. Email Analysis:
+◦ Sentiment analysis (positive/negative/neutral).
+◦ Email classification (complaint, inquiry, feedback).
+◦ Topic extraction using TF-IDF and K-means clustering.
+4. Insight Generation:
+◦ Summarizes sentiment distribution.
+◦ Categorizes emails by type.
+◦ Identifies common topics.
+5. Training Capability:
+◦ Allows fine-tuning the DistilBERT model on your email data.
+◦ Saves the trained model for future use.
+6. Local Web Interface:
+◦ Displays insights through interactive charts.
+◦ Shows analyzed email data in a table.
+◦ Provides buttons to fetch emails and train the model.
+Customization and Enhancement
+1. Labeled Data:
+◦ For better performance, create a labeled dataset of customer emails. You can do
+this by manually categorizing a subset of your emails into classes like complaint,
+inquiry, feedback, etc.
+2. Additional Features:
+◦ Add more email categories based on your business needs.
+◦ Implement more sophisticated topic modeling techniques like LDA.
+◦ Add functionality to export insights to CSV or other formats.
+3. Deployment:
+◦ For a production environment, consider deploying the application with a more
+robust web server like Gunicorn or uWSGI.
+◦ Add user authentication to secure access to the dashboard.
+4. Scaling:
+◦ For large volumes of emails, implement batch processing and use more efficient
+data structures.
+This application provides a powerful and flexible tool for analyzing customer emails and
+extracting valuable insights to drive business decisions. By leveraging state-of-the-art NLP
+models and machine learning techniques, it offers capabilities similar to those of a world-class
+consulting team, but tailored to your specific data and needs.

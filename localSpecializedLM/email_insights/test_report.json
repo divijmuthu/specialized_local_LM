@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-09-12T19:19:07.990653",
+  "total_tests": 7,
+  "passed_tests": 7,
+  "failed_tests": 0,
+  "test_details": [
+    {
+      "test": "Server Connection",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "19:19:06"
+    },
+    {
+      "test": "Server Connection",
+      "success": true,
+      "details": "Status: 200",
+      "timestamp": "19:19:06"
+    },
+    {
+      "test": "Web Interface",
+      "success": true,
+      "details": "All UI components present",
+      "timestamp": "19:19:06"
+    },
+    {
+      "test": "Demo Mode Analysis",
+      "success": true,
+      "details": "Analyzed 10 emails, got insights",
+      "timestamp": "19:19:06"
+    },
+    {
+      "test": "Insight Quality",
+      "success": true,
+      "details": "All analysis types working correctly",
+      "timestamp": "19:19:07"
+    },
+    {
+      "test": "Performance",
+      "success": true,
+      "details": "Response time: 0.53s",
+      "timestamp": "19:19:07"
+    },
+    {
+      "test": "Error Handling",
+      "success": true,
+      "details": "Properly handles invalid endpoints",
+      "timestamp": "19:19:07"
+    }
+  ]
+}

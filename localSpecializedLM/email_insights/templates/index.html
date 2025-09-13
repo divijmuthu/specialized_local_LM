@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Insights Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .data-table {
+            width: 100%;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            border-left: 4px solid #f44336;
+        }
+        .success {
+            color: #4CAF50;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e8f5e8;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Insights Dashboard</h1>
+            <p>Analyze your Gmail emails with AI-powered insights</p>
+        </div>
+        
+        <div class="controls">
+            <button onclick="fetchAndAnalyze()" id="analyzeBtn">Fetch and Analyze Emails</button>
+            <button onclick="demoAnalyze()" id="demoBtn" style="background-color: #2196F3;">Demo Mode (Sample Data)</button>
+            <button onclick="trainModel()" id="trainBtn">Train Model</button>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <div>⏳ Loading...</div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="success" class="success" style="display: none;"></div>
+        
+        <div id="stats" class="stats-grid" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="totalEmails">0</div>
+                <div class="stat-label">Total Emails</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="positiveEmails">0</div>
+                <div class="stat-label">Positive Sentiment</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="complaints">0</div>
+                <div class="stat-label">Complaints</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="inquiries">0</div>
+                <div class="stat-label">Inquiries</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Sentiment Distribution</h3>
+            <canvas id="sentimentChart" width="400" height="200"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Email Type Distribution</h3>
+            <canvas id="emailTypeChart" width="400" height="200"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Topic Distribution</h3>
+            <canvas id="topicChart" width="400" height="200"></canvas>
+        </div>
+        
+        <div class="data-table">
+            <h3>Email Data</h3>
+            <table id="emailTable">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Sender</th>
+                        <th>Date</th>
+                        <th>Sentiment</th>
+                        <th>Type</th>
+                        <th>Topic Cluster</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let currentData = null;
+
+        async function fetchAndAnalyze() {
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            analyzeBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/fetch_and_analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentData = data;
+                    updateStats(data.insights, data.data);
+                    updateCharts(data.insights);
+                    updateTable(data.data);
+                    successDiv.textContent = `Successfully analyzed ${data.data.length} emails!`;
+                    successDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = 'Error: ' + data.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        async function demoAnalyze() {
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            const demoBtn = document.getElementById('demoBtn');
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            demoBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/demo_analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentData = data;
+                    updateStats(data.insights, data.data);
+                    updateCharts(data.insights);
+                    updateTable(data.data);
+                    successDiv.textContent = `🎉 ${data.message}! Demo mode shows realistic email analysis.`;
+                    successDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = 'Error: ' + data.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+                demoBtn.disabled = false;
+            }
+        }
+
+        async function trainModel() {
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const successDiv = document.getElementById('success');
+            const trainBtn = document.getElementById('trainBtn');
+            
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            trainBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/train_model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    successDiv.textContent = data.message;
+                    successDiv.style.display = 'block';
+                } else {
+                    errorDiv.textContent = 'Error: ' + data.error;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+                trainBtn.disabled = false;
+            }
+        }
+
+        function updateStats(insights, data) {
+            const statsDiv = document.getElementById('stats');
+            statsDiv.style.display = 'grid';
+            
+            document.getElementById('totalEmails').textContent = data.length;
+            document.getElementById('positiveEmails').textContent = insights.sentiment_distribution?.POSITIVE || 0;
+            document.getElementById('complaints').textContent = insights.email_type_distribution?.complaint || 0;
+            document.getElementById('inquiries').textContent = insights.email_type_distribution?.inquiry || 0;
+        }
+
+        function updateCharts(insights) {
+            // Check if Chart.js is loaded
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded, retrying in 100ms...');
+                setTimeout(() => updateCharts(insights), 100);
+                return;
+            }
+            
+            // Clear previous charts if they exist
+            if (window.sentimentChart && typeof window.sentimentChart.destroy === 'function') {
+                window.sentimentChart.destroy();
+                window.sentimentChart = null;
+            }
+            if (window.emailTypeChart && typeof window.emailTypeChart.destroy === 'function') {
+                window.emailTypeChart.destroy();
+                window.emailTypeChart = null;
+            }
+            if (window.topicChart && typeof window.topicChart.destroy === 'function') {
+                window.topicChart.destroy();
+                window.topicChart = null;
+            }
+
+            // Sentiment Chart
+            try {
+                const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+                if (insights.sentiment_distribution && Object.keys(insights.sentiment_distribution).length > 0) {
+                    window.sentimentChart = new Chart(sentimentCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(insights.sentiment_distribution),
+                        datasets: [{
+                            label: 'Sentiment Distribution',
+                            data: Object.values(insights.sentiment_distribution),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)',
+                            ],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Sentiment Distribution'
+                            }
+                        }
+                    }
+                });
+                }
+            } catch (error) {
+                console.error('Error creating sentiment chart:', error);
+            }
+
+            // Email Type Chart
+            try {
+                const emailTypeCtx = document.getElementById('emailTypeChart').getContext('2d');
+                if (insights.email_type_distribution && Object.keys(insights.email_type_distribution).length > 0) {
+                    window.emailTypeChart = new Chart(emailTypeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(insights.email_type_distribution),
+                        datasets: [{
+                            label: 'Email Type Distribution',
+                            data: Object.values(insights.email_type_distribution),
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)',
+                            ],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Email Type Distribution'
+                            }
+                        }
+                    }
+                });
+                }
+            } catch (error) {
+                console.error('Error creating email type chart:', error);
+            }
+
+            // Topic Distribution Chart
+            try {
+                const topicCtx = document.getElementById('topicChart').getContext('2d');
+                if (insights.topic_distribution && Object.keys(insights.topic_distribution).length > 0) {
+                    const topics = Object.keys(insights.topic_distribution).map(k => `Cluster ${k}`);
+                    const counts = Object.values(insights.topic_distribution);
+                    window.topicChart = new Chart(topicCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: topics,
+                        datasets: [{
+                            label: 'Topic Distribution',
+                            data: counts,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.7)',
+                                'rgba(54, 162, 235, 0.7)',
+                                'rgba(255, 206, 86, 0.7)',
+                                'rgba(75, 192, 192, 0.7)',
+                                'rgba(153, 102, 255, 0.7)',
+                            ],
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Topic Distribution'
+                            }
+                        }
+                    }
+                });
+                }
+            } catch (error) {
+                console.error('Error creating topic chart:', error);
+            }
+        }
+
+        function updateTable(data) {
+            const tbody = document.querySelector('#emailTable tbody');
+            tbody.innerHTML = '';
+            
+            if (data && data.length > 0) {
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${row.subject || 'No Subject'}</td>
+                        <td>${row.sender || 'Unknown'}</td>
+                        <td>${row.date || 'Unknown'}</td>
+                        <td>${row.sentiment || 'neutral'}</td>
+                        <td>${row.email_type || 'unknown'}</td>
+                        <td>${row.topic_cluster !== undefined ? row.topic_cluster : 'N/A'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
