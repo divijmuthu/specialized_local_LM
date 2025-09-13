@@ -1,0 +1,63 @@
+{
+  "performance": {
+    "data_generation": {
+      "success": true,
+      "execution_time": 0.0054018497467041016,
+      "customers_generated": 1000,
+      "sales_generated": 2000,
+      "feedback_generated": 500
+    },
+    "customer_segmentation": {
+      "success": true,
+      "execution_time": 0.07510900497436523,
+      "clusters_created": 5,
+      "cluster_sizes": [
+        198,
+        200,
+        201,
+        193,
+        208
+      ]
+    },
+    "sentiment_analysis": {
+      "success": true,
+      "execution_time": 0.00043892860412597656,
+      "texts_analyzed": 500,
+      "sentiment_distribution": {
+        "Positive": 214,
+        "Negative": 182,
+        "Neutral": 104
+      }
+    },
+    "sales_forecasting": {
+      "success": true,
+      "execution_time": 0.0036742687225341797,
+      "forecast_periods": 7,
+      "avg_forecast_value": 11357.45423230318
+    }
+  },
+  "scenarios": {
+    "customer_retention": {
+      "success": true,
+      "high_risk_customers": 5,
+      "avg_churn_probability": 0.3718000000000001
+    },
+    "price_optimization": {
+      "success": false,
+      "total_products_tested": 5,
+      "valid_optimizations": 0
+    }
+  },
+  "edge_cases": {
+    "empty_data": {
+      "success": true
+    },
+    "invalid_data": {
+      "success": true
+    },
+    "large_data": {
+      "success": true
+    }
+  },
+  "overall_success_rate": 88.88888888888889
+}

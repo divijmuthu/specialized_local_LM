@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-09-13T14:20:42.028652",
+  "total_tests": 7,
+  "successful_tests": 6,
+  "success_rate": 85.71428571428571,
+  "total_execution_time": 14.904624938964844,
+  "results": [
+    {
+      "test": "Data Processing",
+      "success": true,
+      "message": "Processed 3 records",
+      "execution_time": 0.0058062076568603516
+    },
+    {
+      "test": "Simple Sentiment Analysis",
+      "success": true,
+      "message": "Analyzed 3 texts",
+      "execution_time": 14.897218227386475
+    },
+    {
+      "test": "Simple Topic Extraction",
+      "success": true,
+      "message": "Extracted 5 topics",
+      "execution_time": 14.897330045700073
+    },
+    {
+      "test": "Key Phrase Extraction",
+      "success": false,
+      "message": "\nLooks like you are missing some required data for this feature.\n\nTo download the necessary data, simply run\n\n    python -m textblob.download_corpora\n\nor use the NLTK downloader to download the missing data: http://nltk.org/data.html\nIf this doesn't fix the problem, file an issue at https://github.com/sloria/TextBlob/issues.\n",
+      "execution_time": 14.89858102798462
+    },
+    {
+      "test": "Actionable Insights",
+      "success": true,
+      "message": "Generated 5 insights",
+      "execution_time": 14.898625135421753
+    },
+    {
+      "test": "File Processing",
+      "success": true,
+      "message": "Processed 5 records",
+      "execution_time": 14.901256084442139
+    },
+    {
+      "test": "Performance",
+      "success": true,
+      "message": "Processed 1000 records in 0.001s",
+      "execution_time": 14.904618978500366
+    }
+  ],
+  "assessment": "\u2705 GOOD: System is working well with minor issues."
+}

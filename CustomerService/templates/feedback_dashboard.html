@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Feedback Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .upload-section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            transition: border-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .analyze-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .analyze-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .results-section h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container h3 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .insights-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .insights-section h2 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .insight-category {
+            margin-bottom: 2rem;
+        }
+
+        .insight-category h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .insight-list {
+            list-style: none;
+        }
+
+        .insight-list li {
+            background: #f8f9ff;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .actionable-items {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .actionable-items h3 {
+            color: #856404;
+            margin-bottom: 1rem;
+        }
+
+        .action-item {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 5px;
+            border-left: 3px solid #ffc107;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background: #f8f9ff;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .sentiment-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .sentiment-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .sentiment-neutral {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎧 Customer Feedback Analysis Dashboard</h1>
+            <p>AI-Powered Insights for Better Customer Service</p>
+        </div>
+
+        <div class="upload-section">
+            <h2>📁 Upload Feedback Data</h2>
+            <div class="file-upload" id="fileUpload">
+                <p>📄 Drag and drop your CSV or Excel file here, or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+                <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                    Supported formats: CSV, Excel (.xlsx)<br>
+                    Required columns: text, date
+                </p>
+            </div>
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeFeedback()" disabled>
+                🔍 Analyze Feedback
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing feedback data...</p>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <h2>📊 Analysis Results</h2>
+            
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Metrics will be populated here -->
+            </div>
+
+            <div class="charts-grid" id="chartsGrid">
+                <!-- Charts will be populated here -->
+            </div>
+
+            <div class="insights-section" id="insightsSection">
+                <h2>💡 Key Insights</h2>
+                <!-- Insights will be populated here -->
+            </div>
+
+            <div class="data-table" id="dataTable">
+                <!-- Data table will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let analysisResults = null;
+
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const fileUpload = document.getElementById('fileUpload');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        fileInput.addEventListener('change', handleFileSelect);
+        fileUpload.addEventListener('dragover', handleDragOver);
+        fileUpload.addEventListener('dragleave', handleDragLeave);
+        fileUpload.addEventListener('drop', handleDrop);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                analyzeBtn.disabled = false;
+                fileUpload.innerHTML = `
+                    <p>✅ Selected: ${file.name}</p>
+                    <p style="color: #666; font-size: 0.9rem;">Size: ${(file.size / 1024).toFixed(1)} KB</p>
+                `;
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            fileUpload.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            fileUpload.classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        }
+
+        async function analyzeFeedback() {
+            const loading = document.getElementById('loading');
+            const resultsSection = document.getElementById('resultsSection');
+            
+            loading.style.display = 'block';
+            resultsSection.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                if (selectedFile) {
+                    formData.append('file', selectedFile);
+                }
+
+                const response = await fetch('/analyze_feedback', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    analysisResults = result;
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'Analysis failed');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResults(result) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.style.display = 'block';
+
+            displayMetrics(result.insights);
+            displayCharts(result.insights);
+            displayInsights(result.insights);
+            displayDataTable(result.data);
+        }
+
+        function displayMetrics(insights) {
+            const metricsGrid = document.getElementById('metricsGrid');
+            
+            const metrics = [
+                { label: 'Total Feedback', value: insights.data ? insights.data.length : 0 },
+                { label: 'Positive Sentiment', value: insights.sentiment_distribution?.positive || 0 },
+                { label: 'Negative Sentiment', value: insights.sentiment_distribution?.negative || 0 },
+                { label: 'Actionable Items', value: insights.actionable_items?.length || 0 }
+            ];
+
+            metricsGrid.innerHTML = metrics.map(metric => `
+                <div class="metric-card">
+                    <div class="metric-value">${metric.value}</div>
+                    <div class="metric-label">${metric.label}</div>
+                </div>
+            `).join('');
+        }
+
+        function displayCharts(insights) {
+            const chartsGrid = document.getElementById('chartsGrid');
+            
+            // Sentiment Distribution Chart
+            const sentimentCtx = document.createElement('canvas');
+            sentimentCtx.id = 'sentimentChart';
+            sentimentCtx.width = 400;
+            sentimentCtx.height = 300;
+            
+            const sentimentChart = new Chart(sentimentCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(insights.sentiment_distribution || {}),
+                    datasets: [{
+                        data: Object.values(insights.sentiment_distribution || {}),
+                        backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Sentiment Distribution'
+                        }
+                    }
+                }
+            });
+
+            // Topic Distribution Chart
+            const topicCtx = document.createElement('canvas');
+            topicCtx.id = 'topicChart';
+            topicCtx.width = 400;
+            topicCtx.height = 300;
+            
+            const topicChart = new Chart(topicCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(insights.topic_distribution || {}),
+                    datasets: [{
+                        label: 'Feedback Count',
+                        data: Object.values(insights.topic_distribution || {}),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Topic Distribution'
+                        }
+                    }
+                }
+            });
+
+            chartsGrid.innerHTML = `
+                <div class="chart-container">
+                    <h3>Sentiment Analysis</h3>
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Topic Analysis</h3>
+                    <canvas id="topicChart"></canvas>
+                </div>
+            `;
+
+            // Recreate charts in the new containers
+            setTimeout(() => {
+                const newSentimentCtx = document.getElementById('sentimentChart');
+                const newTopicCtx = document.getElementById('topicChart');
+                
+                new Chart(newSentimentCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(insights.sentiment_distribution || {}),
+                        datasets: [{
+                            data: Object.values(insights.sentiment_distribution || {}),
+                            backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Sentiment Distribution'
+                            }
+                        }
+                    }
+                });
+
+                new Chart(newTopicCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(insights.topic_distribution || {}),
+                        datasets: [{
+                            label: 'Feedback Count',
+                            data: Object.values(insights.topic_distribution || {}),
+                            backgroundColor: '#667eea'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Topic Distribution'
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        }
+
+        function displayInsights(insights) {
+            const insightsSection = document.getElementById('insightsSection');
+            
+            let insightsHTML = '';
+
+            // Top Positive Feedback
+            if (insights.top_positive_feedback && insights.top_positive_feedback.length > 0) {
+                insightsHTML += `
+                    <div class="insight-category">
+                        <h3>😊 Top Positive Feedback</h3>
+                        <ul class="insight-list">
+                            ${insights.top_positive_feedback.map(feedback => `<li>${feedback}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Top Negative Feedback
+            if (insights.top_negative_feedback && insights.top_negative_feedback.length > 0) {
+                insightsHTML += `
+                    <div class="insight-category">
+                        <h3>😞 Top Negative Feedback</h3>
+                        <ul class="insight-list">
+                            ${insights.top_negative_feedback.map(feedback => `<li>${feedback}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Actionable Items
+            if (insights.top_actionable_items && insights.top_actionable_items.length > 0) {
+                insightsHTML += `
+                    <div class="actionable-items">
+                        <h3>🎯 Priority Action Items</h3>
+                        ${insights.top_actionable_items.map(item => `
+                            <div class="action-item">
+                                <strong>${item.category}</strong> (${item.count} occurrences)
+                                <br><small>Examples: ${item.examples.slice(0, 2).join('; ')}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            insightsSection.innerHTML = insightsHTML;
+        }
+
+        function displayDataTable(data) {
+            const dataTable = document.getElementById('dataTable');
+            
+            if (!data || data.length === 0) {
+                dataTable.innerHTML = '<p>No data to display</p>';
+                return;
+            }
+
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Text</th>
+                            <th>Sentiment</th>
+                            <th>Topic</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.slice(0, 20).map(item => `
+                            <tr>
+                                <td>${item.text ? item.text.substring(0, 100) + '...' : ''}</td>
+                                <td class="sentiment-${item.sentiment || 'neutral'}">${item.sentiment || 'neutral'}</td>
+                                <td>${item.topic_label || 'unknown'}</td>
+                                <td>${item.date || ''}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            dataTable.innerHTML = tableHTML;
+        }
+
+        function showError(message) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.innerHTML = `
+                <div class="error">
+                    <h3>❌ Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+        }
+
+        // Initialize with sample data
+        window.addEventListener('load', () => {
+            // Auto-analyze with sample data on page load
+            setTimeout(() => {
+                analyzeFeedback();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

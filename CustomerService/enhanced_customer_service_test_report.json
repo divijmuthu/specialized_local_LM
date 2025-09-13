@@ -1,0 +1,56 @@
+{
+  "performance": {
+    "total_tests": 4,
+    "successful_tests": 0,
+    "success_rate": "0.0%",
+    "average_execution_time": "0.000s",
+    "max_execution_time": "0.000s"
+  },
+  "scenarios": {
+    "total_scenarios": 4,
+    "successful_scenarios": 0,
+    "success_rate": "0.0%",
+    "scenarios": {
+      "customer_satisfaction": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      },
+      "topic_analysis": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      },
+      "actionable_insights": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      },
+      "trend_analysis": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      }
+    }
+  },
+  "edge_cases": {
+    "total_tests": 4,
+    "successful_tests": 0,
+    "success_rate": "0.0%",
+    "test_results": {
+      "empty_feedback": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      },
+      "invalid_text": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      },
+      "large_dataset": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      },
+      "special_characters": {
+        "success": false,
+        "error": "No module named 'transformers'"
+      }
+    }
+  },
+  "overall_success_rate": 0.0
+}
