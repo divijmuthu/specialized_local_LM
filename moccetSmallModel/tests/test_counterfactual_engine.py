@@ -1,6 +1,11 @@
 import pytest
+import numpy as np
 from datetime import datetime, timedelta
-from moccetSmallModel.counterfactual_engine import (
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from counterfactual_engine import (
     AlternativeTimeline,
     Decision,
     BusinessSimulator,
@@ -120,10 +125,6 @@ def test_counterfactual_engine_evaluate_and_find_optimal():
     assert evaluated[0].improvement >= evaluated[-1].improvement
     assert isinstance(optimal, AlternativeTimeline)
     assert optimal.improvement == max(t.improvement for t in timelines)
-import numpy as np
-import pandas as pd
-from moccetSmallModel.counterfactual_engine import CounterfactualRealityEngine, AlternativeTimeline
-
 
 def test_explore_parallel_realities():
     engine = CounterfactualRealityEngine()

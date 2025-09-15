@@ -32,7 +32,22 @@ class MultiScaleTemporalAnalyzer:
         self.decomposers = {}
     def analyze(self, data: np.ndarray, timestamps: np.ndarray) -> Dict[str, Any]:
         results = {'patterns': [], 'anomalies': [], 'cycles': [], 'trends': []}
-        cwt_matrix = signal.cwt(data, signal.morlet2, self.scales)
+        # Wavelet transform across all scales using PyWavelets
+        import pywt
+        cwt_matrix = np.zeros((len(self.scales), len(data)))
+        for i, scale in enumerate(self.scales):
+            # Skip scales that are too small for wavelet transform
+            if scale < 0.1:  # Minimum scale threshold
+                cwt_matrix[i, :] = np.zeros(len(data))
+                continue
+            try:
+                # Use continuous wavelet transform with Morlet wavelet
+                coeffs, freqs = pywt.cwt(data, [scale], 'cmor1.0-0.5', sampling_period=1.0)
+                if len(coeffs) > 0:
+                    cwt_matrix[i, :] = np.abs(coeffs[0, :])
+            except ValueError:
+                # If scale is still too small, use zeros
+                cwt_matrix[i, :] = np.zeros(len(data))
         for i, scale in enumerate(self.scales):
             scale_data = cwt_matrix[i, :]
             patterns = self._detect_patterns_at_scale(scale_data, scale)

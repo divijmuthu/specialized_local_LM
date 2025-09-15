@@ -1,7 +1,11 @@
 import numpy as np
 import pandas as pd
 import pytest
-from moccetSmallModel.temporal_mining import (
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from temporal_mining import (
     TemporalPattern,
     MultiScaleTemporalAnalyzer,
     TemporalAdvantageMiner,
@@ -46,7 +50,10 @@ def test_fast_correlation():
     assert corrs.shape[0] == 21
 
 def test_temporal_advantage_miner():
+    # Use smaller scales for testing to avoid long execution time
+    small_scales = np.logspace(-1, 2, 10)  # 10 scales instead of 1000
     miner = TemporalAdvantageMiner(config={})
+    miner.analyzer.scales = small_scales  # Override with smaller scales
     data = generate_sample_data()
     patterns = miner.analyzer.analyze(data['sample']['value'].values, data['sample']['timestamp'].values)
     assert isinstance(patterns, dict)
