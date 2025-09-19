@@ -1043,6 +1043,337 @@ class APIDataConnector(AdvancedDataConnector):
             return False, {'error': str(e)}
 
 
+class MongoDBDataConnector(AdvancedDataConnector):
+    """MongoDB connector implementation"""
+    
+    async def connect(self) -> bool:
+        """Establish connection to MongoDB"""
+        try:
+            # Simulate MongoDB connection
+            self.status = ConnectionStatus.CONNECTED
+            return True
+        except Exception as e:
+            print(f"MongoDB connection failed: {e}")
+            self.status = ConnectionStatus.ERROR
+            return False
+    
+    async def disconnect(self) -> bool:
+        """Close MongoDB connection"""
+        self.status = ConnectionStatus.DISCONNECTED
+        return True
+    
+    async def extract(self, query: Optional[Dict] = None) -> Any:
+        """Extract data from MongoDB"""
+        # Simulate MongoDB data extraction
+        sample_data = pd.DataFrame({
+            'document_id': [f'doc_{i}' for i in range(1, 101)],
+            'user_id': np.random.randint(1, 50, 100),
+            'event_type': np.random.choice(['login', 'purchase', 'view', 'click'], 100),
+            'metadata': [{'key': f'value_{i}'} for i in range(100)],
+            'timestamp': pd.date_range('2024-01-01', periods=100, freq='h'),
+            'value': np.random.exponential(10, 100)
+        })
+        return sample_data
+    
+    async def validate_schema(self) -> Tuple[bool, Dict]:
+        """Validate MongoDB schema"""
+        schema = {
+            'database': self.config.connection_params.get('database', 'test_db'),
+            'collections': ['users', 'events', 'analytics'],
+            'indexes': ['user_id', 'timestamp', 'event_type'],
+            'document_structure': {
+                'users': ['_id', 'user_id', 'profile'],
+                'events': ['_id', 'user_id', 'event_type', 'timestamp'],
+                'analytics': ['_id', 'metric', 'value', 'date']
+            }
+        }
+        return True, schema
+
+
+class RedisDataConnector(AdvancedDataConnector):
+    """Redis connector implementation for caching and real-time data"""
+    
+    async def connect(self) -> bool:
+        """Establish connection to Redis"""
+        try:
+            # Simulate Redis connection
+            self.status = ConnectionStatus.CONNECTED
+            return True
+        except Exception as e:
+            print(f"Redis connection failed: {e}")
+            self.status = ConnectionStatus.ERROR
+            return False
+    
+    async def disconnect(self) -> bool:
+        """Close Redis connection"""
+        self.status = ConnectionStatus.DISCONNECTED
+        return True
+    
+    async def extract(self, query: Optional[Dict] = None) -> Any:
+        """Extract data from Redis"""
+        # Simulate Redis data extraction (key-value pairs)
+        cache_data = pd.DataFrame({
+            'key': [f'cache_key_{i}' for i in range(1, 101)],
+            'value': np.random.randn(100),
+            'ttl': np.random.randint(60, 3600, 100),  # TTL in seconds
+            'access_count': np.random.randint(1, 1000, 100),
+            'last_accessed': pd.date_range('2024-01-01', periods=100, freq='min'),
+            'data_type': np.random.choice(['string', 'hash', 'list', 'set'], 100)
+        })
+        return cache_data
+    
+    async def validate_schema(self) -> Tuple[bool, Dict]:
+        """Validate Redis schema"""
+        schema = {
+            'host': self.config.connection_params.get('host', 'localhost'),
+            'port': self.config.connection_params.get('port', 6379),
+            'database': self.config.connection_params.get('database', 0),
+            'key_patterns': ['user:*', 'session:*', 'cache:*'],
+            'data_types': ['string', 'hash', 'list', 'set', 'zset']
+        }
+        return True, schema
+
+
+class StreamingDataConnector(AdvancedDataConnector):
+    """Streaming data connector for real-time data processing"""
+    
+    def __init__(self, config: AdvancedDataSourceConfig):
+        super().__init__(config)
+        self.stream_buffer = []
+        self.is_streaming = False
+    
+    async def connect(self) -> bool:
+        """Establish streaming connection"""
+        try:
+            self.status = ConnectionStatus.CONNECTED
+            self.is_streaming = True
+            return True
+        except Exception as e:
+            print(f"Streaming connection failed: {e}")
+            self.status = ConnectionStatus.ERROR
+            return False
+    
+    async def disconnect(self) -> bool:
+        """Close streaming connection"""
+        self.is_streaming = False
+        self.status = ConnectionStatus.DISCONNECTED
+        return True
+    
+    async def extract(self, query: Optional[Dict] = None) -> Any:
+        """Extract streaming data"""
+        if not self.is_streaming:
+            return pd.DataFrame()
+        
+        # Simulate real-time streaming data
+        stream_data = pd.DataFrame({
+            'stream_id': range(1, 51),
+            'sensor_value': np.random.randn(50),
+            'temperature': np.random.normal(25, 5, 50),
+            'pressure': np.random.normal(1013, 20, 50),
+            'status': np.random.choice(['normal', 'warning', 'critical'], 50, p=[0.8, 0.15, 0.05]),
+            'timestamp': pd.date_range(datetime.now(), periods=50, freq='s'),
+            'location': np.random.choice(['Sensor_A', 'Sensor_B', 'Sensor_C'], 50)
+        })
+        
+        return stream_data
+    
+    async def validate_schema(self) -> Tuple[bool, Dict]:
+        """Validate streaming schema"""
+        schema = {
+            'stream_type': 'real_time_sensors',
+            'data_rate': '1Hz',
+            'fields': ['sensor_value', 'temperature', 'pressure', 'status', 'timestamp', 'location'],
+            'quality_metrics': {
+                'latency': '< 100ms',
+                'throughput': '50 records/sec',
+                'availability': '99.9%'
+            }
+        }
+        return True, schema
+
+
+class EnhancedInsightGenerator(InsightGenerator):
+    """Enhanced insight generator with advanced analytics"""
+    
+    async def generate_advanced_business_insights(self, data_package: Dict) -> List[Dict]:
+        """Generate advanced business insights with ML predictions"""
+        insights = []
+        
+        # Get base insights
+        base_insights = await self.generate_multi_domain_insights(data_package)
+        insights.extend(base_insights)
+        
+        # Add advanced business insights
+        raw_data = data_package.get('raw_data', {})
+        
+        # Revenue optimization insights
+        revenue_insights = await self._generate_revenue_optimization_insights(raw_data)
+        insights.extend(revenue_insights)
+        
+        # Customer lifecycle insights
+        lifecycle_insights = await self._generate_customer_lifecycle_insights(raw_data)
+        insights.extend(lifecycle_insights)
+        
+        # Operational efficiency insights
+        efficiency_insights = await self._generate_operational_efficiency_insights(raw_data)
+        insights.extend(efficiency_insights)
+        
+        # Risk assessment insights
+        risk_insights = await self._generate_risk_assessment_insights(raw_data)
+        insights.extend(risk_insights)
+        
+        # Rank all insights
+        ranked_insights = sorted(
+            insights,
+            key=lambda x: x.get('importance_score', 0.5) * x.get('novelty_score', 0.5) * x.get('business_impact', 1.0),
+            reverse=True
+        )
+        
+        return ranked_insights[:100]  # Return top 100 insights
+    
+    async def _generate_revenue_optimization_insights(self, raw_data: Dict) -> List[Dict]:
+        """Generate revenue optimization insights"""
+        insights = []
+        
+        for source, data in raw_data.items():
+            if isinstance(data, pd.DataFrame):
+                # Look for revenue-related columns
+                revenue_cols = [col for col in data.columns 
+                              if any(keyword in col.lower() 
+                                    for keyword in ['revenue', 'sales', 'profit', 'price', 'amount'])]
+                
+                if revenue_cols:
+                    for col in revenue_cols[:2]:  # Limit to first 2 revenue columns
+                        if data[col].dtype in ['int64', 'float64']:
+                            avg_value = data[col].mean()
+                            std_value = data[col].std()
+                            
+                            # Revenue trend analysis
+                            if len(data) > 10:
+                                recent_avg = data[col].tail(10).mean()
+                                overall_avg = data[col].mean()
+                                trend = (recent_avg - overall_avg) / overall_avg if overall_avg != 0 else 0
+                                
+                                if abs(trend) > 0.1:  # Significant trend
+                                    insights.append({
+                                        'title': f'Revenue trend detected in {source}.{col}',
+                                        'description': f'{"Increasing" if trend > 0 else "Decreasing"} trend of {trend:.1%} detected',
+                                        'type': 'revenue_optimization',
+                                        'importance_score': min(0.9, abs(trend) * 2),
+                                        'novelty_score': 0.8,
+                                        'business_impact': abs(trend) * avg_value,
+                                        'metrics': {
+                                            'trend_percentage': trend,
+                                            'average_value': avg_value,
+                                            'recent_average': recent_avg
+                                        }
+                                    })
+        
+        return insights
+    
+    async def _generate_customer_lifecycle_insights(self, raw_data: Dict) -> List[Dict]:
+        """Generate customer lifecycle insights"""
+        insights = []
+        
+        for source, data in raw_data.items():
+            if isinstance(data, pd.DataFrame):
+                # Look for customer-related columns
+                customer_cols = [col for col in data.columns 
+                               if any(keyword in col.lower() 
+                                     for keyword in ['customer', 'user', 'client', 'churn', 'retention'])]
+                
+                if customer_cols:
+                    insights.append({
+                        'title': f'Customer lifecycle data available in {source}',
+                        'description': f'Found {len(customer_cols)} customer-related metrics for lifecycle analysis',
+                        'type': 'customer_lifecycle',
+                        'importance_score': 0.85,
+                        'novelty_score': 0.7,
+                        'business_impact': len(customer_cols) * 10000,
+                        'metrics': {
+                            'customer_columns': customer_cols,
+                            'data_points': len(data)
+                        }
+                    })
+        
+        return insights
+    
+    async def _generate_operational_efficiency_insights(self, raw_data: Dict) -> List[Dict]:
+        """Generate operational efficiency insights"""
+        insights = []
+        
+        for source, data in raw_data.items():
+            if isinstance(data, pd.DataFrame):
+                # Look for operational metrics
+                operational_cols = [col for col in data.columns 
+                                  if any(keyword in col.lower() 
+                                        for keyword in ['efficiency', 'performance', 'uptime', 'response', 'error'])]
+                
+                if operational_cols:
+                    for col in operational_cols[:2]:
+                        if data[col].dtype in ['int64', 'float64']:
+                            # Calculate efficiency metrics
+                            median_value = data[col].median()
+                            p95_value = data[col].quantile(0.95)
+                            p5_value = data[col].quantile(0.05)
+                            
+                            efficiency_score = 1 - (p95_value - p5_value) / median_value if median_value != 0 else 0
+                            
+                            if efficiency_score > 0.7:  # High efficiency
+                                insights.append({
+                                    'title': f'High operational efficiency in {source}.{col}',
+                                    'description': f'Efficiency score of {efficiency_score:.2f} indicates stable operations',
+                                    'type': 'operational_efficiency',
+                                    'importance_score': efficiency_score,
+                                    'novelty_score': 0.6,
+                                    'business_impact': efficiency_score * 50000,
+                                    'metrics': {
+                                        'efficiency_score': efficiency_score,
+                                        'median_value': median_value,
+                                        'p95_value': p95_value,
+                                        'p5_value': p5_value
+                                    }
+                                })
+        
+        return insights
+    
+    async def _generate_risk_assessment_insights(self, raw_data: Dict) -> List[Dict]:
+        """Generate risk assessment insights"""
+        insights = []
+        
+        for source, data in raw_data.items():
+            if isinstance(data, pd.DataFrame):
+                # Look for risk indicators
+                risk_cols = [col for col in data.columns 
+                           if any(keyword in col.lower() 
+                                 for keyword in ['risk', 'error', 'failure', 'critical', 'alert'])]
+                
+                if risk_cols:
+                    for col in risk_cols:
+                        if data[col].dtype in ['int64', 'float64']:
+                            # Calculate risk metrics
+                            max_value = data[col].max()
+                            mean_value = data[col].mean()
+                            risk_level = max_value / mean_value if mean_value != 0 else 0
+                            
+                            if risk_level > 2.0:  # High risk indicator
+                                insights.append({
+                                    'title': f'Risk indicator detected in {source}.{col}',
+                                    'description': f'Risk level of {risk_level:.2f} requires attention',
+                                    'type': 'risk_assessment',
+                                    'importance_score': min(0.95, risk_level / 5),
+                                    'novelty_score': 0.9,
+                                    'business_impact': risk_level * 25000,
+                                    'metrics': {
+                                        'risk_level': risk_level,
+                                        'max_value': max_value,
+                                        'mean_value': mean_value
+                                    }
+                                })
+        
+        return insights
+
+
 # Main execution example
 async def main():
     """Main execution function demonstrating the system capabilities"""
